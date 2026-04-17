@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 st.set_page_config(page_title="Attendance Intelligence System", layout="wide")
 
@@ -10,8 +11,13 @@ uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
-else:
+elif os.path.exists("attendance.csv"):
+    df = pd.read_csv("attendance.csv")
+elif os.path.exists("data/attendance.csv"):
     df = pd.read_csv("data/attendance.csv")
+else:
+    st.error("Dataset not found")
+    st.stop()
 
 df["attendance_percentage"] = (df["attended_classes"] / df["total_classes"]) * 100
 
@@ -49,7 +55,7 @@ selected_student = st.selectbox("Select Student", df["name"])
 student = df[df["name"] == selected_student].iloc[0]
 
 if student["attendance_percentage"] < threshold:
-    needed = int(((threshold/100)*student["total_classes"]) - student["attended_classes"])
+    needed = max(0, int(((threshold/100)*student["total_classes"]) - student["attended_classes"]))
     st.warning(f"You need to attend next {needed} classes continuously to reach {threshold}%")
 else:
     st.success("You are already above the required attendance")
